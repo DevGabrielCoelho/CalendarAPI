@@ -21,6 +21,7 @@ namespace CalendarAPI.Models
         public string PassHash { get; set; } = string.Empty;
         [NotMapped]   
         public List<Event> Events { get; set; } = new();
+        public string Token { get; set; } = string.Empty;
 
     }
 }

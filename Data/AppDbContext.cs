@@ -35,6 +35,10 @@ namespace CalendarAPI.Data
                 .HasMaxLength(36)
                 .IsRequired();
 
+            modelBuilder.Entity<User>()
+                .HasIndex(u => u.Email)
+                .IsUnique();
+
             modelBuilder.Entity<Event>()
                 .Property(e => e.Id)
                 .HasMaxLength(36)
