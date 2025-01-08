@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using CalendarAPI.Data;
 using CalendarAPI.Interfaces;
 using CalendarAPI.Services;
@@ -36,7 +37,10 @@ builder.Services.AddSwaggerGen(option =>
     });
 });
 
-builder.Services.AddControllers();
+builder.Services.AddControllers().AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
+    });
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
