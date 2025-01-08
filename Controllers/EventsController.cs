@@ -22,9 +22,10 @@ namespace CalendarAPI.Controllers
         }
 
         [HttpPost]
-        public IActionResult Criate([FromForm] CreateEventDto dto, string email, string token)
+        public IActionResult Create([FromForm] CreateEventDto dto, [FromForm]string email, [FromForm]string token)
         {
-            User user = _context.Users.FirstOrDefault(x => x.Email == email);
+            System.Console.WriteLine(dto.Title);
+            User user = _context.Users.Include(x => x.Events).FirstOrDefault(x => x.Email == email);
             Event _event;
             if (user.Token == token)
             {
