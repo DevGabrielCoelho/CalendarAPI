@@ -8,6 +8,6 @@ namespace CalendarAPI.Dtos
     public class CreateReminderDto
     {
         public string EventId { get; set; } = string.Empty;
-        public TimeSpan TimeBefore { get; set; }
+        public double MinutesBefore { get; set; }
     }
 }

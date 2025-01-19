@@ -18,33 +18,30 @@ namespace CalendarAPI.Controllers
     [Route("api/auth")]
     public class AuthController : ControllerBase
     {
-        private readonly AppDbContext _context;
+        private readonly IUserRepository _userRepository;
         private readonly IPasswordHasher _hasher;
         private readonly ITokenService _token;
-        public AuthController(AppDbContext dbContext, IPasswordHasher hasher, ITokenService token){
-            _context = dbContext;
+        public AuthController(IPasswordHasher hasher, ITokenService token, IUserRepository userRepository){
             _hasher = hasher;
             _token = token;
+            _userRepository = userRepository;
         }
 
         [HttpPost("register")]
-        public IActionResult Register([FromForm]UserDto userDto){
+        public async Task<IActionResult> Register([FromForm]UserDto userDto){
             userDto.Pass = _hasher.Hash(userDto.Pass);
             User user = UserMappers.RegisterUser(userDto);
-            _context.Users.Add(user);
-            _context.SaveChanges();
+            await _userRepository.AddUserAsync(user);
             return Ok();
         }
 
         [HttpPost("login")]
-        public IActionResult Login([FromForm]LoginDto dto){
-            User user = _context.Users.FirstOrDefault(u => u.Email == dto.Email);
+        public async Task<IActionResult> Login([FromForm]LoginDto dto){
+            User user = await _userRepository.GetUserByEmailAsync(dto.Email);
             bool Verify = _hasher.Verify(user.PassHash, dto.Pass);
             if(Verify){
                 user.Token = _token.CreateToken(user);
-                _context.Users.Where(x => x.Id == user.Id).ExecuteUpdate(x => x
-                .SetProperty(x => x.Token, user.Token));
-                _context.SaveChanges();
+                await _userRepository.UpdateTokenAsync(user.Id, user.Token);
                 return Ok();
             }
             return BadRequest();

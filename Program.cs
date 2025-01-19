@@ -1,13 +1,24 @@
 using System.Text.Json.Serialization;
 using CalendarAPI.Data;
 using CalendarAPI.Interfaces;
+using CalendarAPI.Repository;
 using CalendarAPI.Services;
+using DotNetEnv;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
+
+Env.Load();
+
+builder.Configuration
+    .SetBasePath(Directory.GetCurrentDirectory())  // Define o diretório base
+    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+    .AddEnvironmentVariables();  // Carrega as variáveis de ambiente (sobrescrevendo as do appsettings)
+
+builder.Services.AddRazorPages();
 
 builder.Services.AddSwaggerGen(option =>
 {
@@ -44,7 +55,6 @@ builder.Services.AddControllers().AddJsonOptions(options =>
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Npgsql")));
 
@@ -79,6 +89,12 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IEventRepository, EventRepository>();
+builder.Services.AddScoped<IReminderRepository, ReminderRepository>();
+builder.Services.AddHostedService<EmailBackgroundService>();
+builder.Services.AddSingleton<EmailService>();
+
 
 var app = builder.Build();
 

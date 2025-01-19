@@ -4,7 +4,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using CalendarAPI.Data;
 using CalendarAPI.Dtos;
+using CalendarAPI.Interfaces;
 using CalendarAPI.Models;
+using CalendarAPI.Repository;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,18 +16,20 @@ namespace CalendarAPI.Controllers
     [Route("api/events")]
     public class EventsController : ControllerBase
     {
-        private readonly AppDbContext _context;
+        private readonly IUserRepository _userRepository;
+        private readonly IEventRepository _eventRepository;
 
-        public EventsController(AppDbContext context)
+        public EventsController(IUserRepository userRepository, IEventRepository eventRepository)
         {
-            _context = context;
+            _userRepository = userRepository;
+            _eventRepository = eventRepository;
         }
 
         [HttpPost]
-        public IActionResult Create([FromForm] CreateEventDto dto, [FromForm]string email, [FromForm]string token)
+        public async Task<IActionResult> Create([FromForm] CreateEventDto dto, [FromForm] string email, [FromForm] string token, [FromForm] List<string> emails)
         {
             System.Console.WriteLine(dto.Title);
-            User user = _context.Users.Include(x => x.Events).FirstOrDefault(x => x.Email == email);
+            User user = await _userRepository.GetUserByEmailAsync(email);
             Event _event;
             if (user.Token == token)
             {
@@ -38,47 +42,48 @@ namespace CalendarAPI.Controllers
                     Location = dto.Location,
                     Title = dto.Title,
                     UserId = user.Id,
-                    User = user
+                    User = user,
+                    GuestsEmails = emails
+                    
                 };
                 user.Events.Add(_event);
-                _context.Events.Add(_event);
-                _context.Users.Update(user);
-                _context.SaveChanges();
+                await _eventRepository.AddEventAsync(_event);
+                await _userRepository.UpdateUserAsync(user);
             }
             return Ok();
         }
 
         [HttpGet]
-        public IActionResult ListEvents()
+        public async Task<IActionResult> ListEvents()
         {
-            return Ok(_context.Events.Include(x => x.User).Include(x => x.Reminders).ToList());
+            return Ok(await _eventRepository.GetAllAsync());
         }
 
         [HttpGet("{id}")]
-        public IActionResult ListEventsById([FromRoute] string id){
-            return Ok(_context.Events.Include(x => x.User).FirstOrDefault(x => x.Id == id));
+        public async Task<IActionResult> ListEventsById([FromRoute] string id)
+        {
+            return Ok(await _eventRepository.GetByIdAsync(id));
         }
 
         [HttpPut("{id}")]
-        public IActionResult AttEventsById([FromRoute] string id, [FromForm] CreateEventDto dto){
-            Event _event = _context.Events.FirstOrDefault(x => x.Id == id);
+        public async Task<IActionResult> AttEventsById([FromRoute] string id, [FromForm] CreateEventDto dto)
+        {
+            Event _event = await _eventRepository.GetByIdAsync(id);
             _event.DateEnd = dto.DateEnd;
             _event.DateStart = dto.DateStart;
             _event.Description = dto.Description;
             _event.Location = dto.Location;
             _event.Title = dto.Title;
 
-            _context.Events.Update(_event);
-
-            _context.SaveChanges();
+            await _eventRepository.UpdateAsync(_event);
 
             return Ok();
         }
 
         [HttpDelete("{id}")]
-        public IActionResult DelEventById([FromRoute] string id){
-            _context.Events.Remove(_context.Events.FirstOrDefault(x => x.Id == id));
-            _context.SaveChanges();
+        public IActionResult DelEventById([FromRoute] string id)
+        {
+            _eventRepository.RemoveByIdAsync(id);
             return Ok();
         }
 

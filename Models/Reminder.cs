@@ -18,7 +18,9 @@ namespace CalendarAPI.Models
         [NotMapped]
         public Event Event { get; set; } = new();
         [Required]
-        public TimeSpan TimeBefore { get; set; }
+        public Double MinutesBefore { get; set; }
+        [Required]
+        public bool SendedEmail { get; set; } = false;
         [Required]
         public string CreatorEmail { get; set; } = string.Empty;
     }

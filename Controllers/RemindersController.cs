@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using CalendarAPI.Data;
 using CalendarAPI.Dtos;
+using CalendarAPI.Interfaces;
 using CalendarAPI.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -14,41 +15,36 @@ namespace CalendarAPI.Controllers
     [Route("api/reminders")]
     public class RemindersController : ControllerBase
     {
-        public readonly AppDbContext _context;
-        public RemindersController(AppDbContext context){
-            _context = context;
+        private readonly IEventRepository _eventRepository;
+        private readonly IReminderRepository _reminderRepository;
+        public RemindersController(IEventRepository eventRepository, IReminderRepository reminderRepository){
+            _eventRepository = eventRepository;
+            _reminderRepository = reminderRepository;
         }
 
         [HttpPost]
-        public IActionResult CreateReminders([FromForm] CreateReminderDto dto){
-            Event _event = _context.Events
-                                .Include(x => x.User)
-                                .Include(x => x.Reminders)
-                                .FirstOrDefault(x => x.Id == dto.EventId);
-            System.Console.WriteLine(_event.Id);
-            System.Console.WriteLine(_event.User.Id);
+        public async Task<IActionResult> CreateReminders([FromForm] CreateReminderDto dto){
+            Event _event = await _eventRepository.GetByIdAsync(dto.EventId);
             Reminder reminder = new Reminder{
                 CreatorEmail = _event.User.Email,
                 Event = _event,
                 EventId = _event.Id,
                 Id = Guid.NewGuid().ToString(),
-                TimeBefore = dto.TimeBefore
+                MinutesBefore = dto.MinutesBefore
             };
             _event.Reminders.Add(reminder);
-            _context.Reminders.Add(reminder);
-            _context.Events.Update(_event);
-            _context.SaveChanges();
+            await _reminderRepository.AddAsync(reminder);
+            await _eventRepository.UpdateAsync(_event);
             return Ok();
         }
 
         [HttpDelete("{id}")]
-        public IActionResult DeleteReminders([FromRoute] string id){
-            Reminder reminder = _context.Reminders.Include(x => x.Event).FirstOrDefault(x => x.Id == id);
+        public async Task<IActionResult> DeleteReminders([FromRoute] string id){
+            Reminder reminder = await _reminderRepository.GetByIdAsync(id);
             Event _event = reminder.Event;
             _event.Reminders.Remove(reminder);
-            _context.Events.Update(_event);
-            _context.Reminders.Remove(reminder);
-            _context.SaveChanges();
+            await _eventRepository.UpdateAsync(_event);
+            await _reminderRepository.RemoveAsync(reminder);
             return Ok();
         }
     }

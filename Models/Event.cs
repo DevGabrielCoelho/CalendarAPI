@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace CalendarAPI.Models
@@ -27,9 +28,20 @@ namespace CalendarAPI.Models
         public DateTime DateEnd { get; set; }
         [Required]
         public string Location { get; set; } = string.Empty;
+        [Required]
+        public string GuestsEmailsJson
+        {
+            get => JsonSerializer.Serialize(GuestsEmails);
+            set => GuestsEmails = string.IsNullOrEmpty(value)
+                ? new List<string>()
+                : JsonSerializer.Deserialize<List<string>>(value) ?? new List<string>();
+        }
+
         [NotMapped]
         public List<string> GuestsEmails { get; set; } = new();
         [NotMapped]
+        [Required]
+        public bool SendedEmail { get => Reminders.All(x => x.SendedEmail); }
         public List<Reminder> Reminders { get; set; } = new();
     }
 }

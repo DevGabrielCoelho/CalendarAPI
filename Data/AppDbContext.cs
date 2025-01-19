@@ -10,7 +10,8 @@ namespace CalendarAPI.Data
     public class AppDbContext : DbContext
     {
         public AppDbContext(DbContextOptions dbContextOptions) :
-            base(dbContextOptions){}
+            base(dbContextOptions)
+        { }
 
         public DbSet<User>? Users { get; set; }
         public DbSet<Event>? Events { get; set; }
@@ -49,6 +50,10 @@ namespace CalendarAPI.Data
                 .HasMaxLength(36)
                 .IsRequired();
 
+            modelBuilder.Entity<Event>()
+                .Property(e => e.GuestsEmailsJson)
+                .HasColumnName("GuestsEmails");
+
             modelBuilder.Entity<Reminder>()
                 .Property(r => r.Id)
                 .HasMaxLength(36)
@@ -57,6 +62,10 @@ namespace CalendarAPI.Data
             modelBuilder.Entity<Reminder>()
                 .Property(r => r.EventId)
                 .HasMaxLength(36)
+                .IsRequired();
+            
+            modelBuilder.Entity<Reminder>()
+                .Property(e => e.SendedEmail)
                 .IsRequired();
 
             base.OnModelCreating(modelBuilder);
