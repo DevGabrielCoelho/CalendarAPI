@@ -62,15 +62,17 @@ namespace CalendarAPI.Services
         private async Task NotifyUser(Event calendarEvent)
         {
             var emailBody = $@"
-        <h1>Olá!</h1>
-        <p>Você tem um evento agendado:</p>
-        <ul>
-            <li><strong>Descrição:</strong> {calendarEvent.Description}</li>
-            <li><strong>Data:</strong> {calendarEvent.DateStart:dd/MM/yyyy HH:mm}</li>
-        </ul>";
-            await _emailService.SendEmailAsync(calendarEvent.User.Email, "Lembrete de Evento", emailBody);
+                <h1>Hello!</h1>
+                <p>You have a scheduled event:</p>
+                <ul>
+                    <li><strong>Description:</strong> {calendarEvent.Description}</li>
+                    <li><strong>Date:</strong> {calendarEvent.DateStart:MM/dd/yyyy HH:mm}</li>
+                    <li><strong>Location:</strong> {calendarEvent.Location}</li>
+                </ul>git 
+            ";
+            await _emailService.SendEmailAsync(calendarEvent.User.Email, "Event Reminder", emailBody);
             foreach(string x in calendarEvent.GuestsEmails){
-                await _emailService.SendEmailAsync(x, "Lembrete de Evento", emailBody);
+                await _emailService.SendEmailAsync(x, "Event Reminder", emailBody);
             }
         }
 
