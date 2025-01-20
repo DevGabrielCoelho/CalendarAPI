@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace CalendarAPI.Migrations
 {
     /// <inheritdoc />
-    public partial class first : Migration
+    public partial class FinalMigration : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -18,7 +18,8 @@ namespace CalendarAPI.Migrations
                     Id = table.Column<string>(type: "character varying(36)", maxLength: 36, nullable: false),
                     Name = table.Column<string>(type: "text", nullable: false),
                     Email = table.Column<string>(type: "text", nullable: false),
-                    PassHash = table.Column<string>(type: "text", nullable: false)
+                    PassHash = table.Column<string>(type: "text", nullable: false),
+                    Token = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -35,7 +36,8 @@ namespace CalendarAPI.Migrations
                     Description = table.Column<string>(type: "text", nullable: false),
                     DateStart = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     DateEnd = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    Location = table.Column<string>(type: "text", nullable: false)
+                    Location = table.Column<string>(type: "text", nullable: false),
+                    GuestsEmails = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -54,7 +56,8 @@ namespace CalendarAPI.Migrations
                 {
                     Id = table.Column<string>(type: "character varying(36)", maxLength: 36, nullable: false),
                     EventId = table.Column<string>(type: "character varying(36)", maxLength: 36, nullable: false),
-                    TimeBefore = table.Column<TimeSpan>(type: "interval", nullable: false),
+                    MinutesBefore = table.Column<double>(type: "double precision", nullable: false),
+                    SendedEmail = table.Column<bool>(type: "boolean", nullable: false),
                     CreatorEmail = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
@@ -77,6 +80,12 @@ namespace CalendarAPI.Migrations
                 name: "IX_Reminders_EventId",
                 table: "Reminders",
                 column: "EventId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Users_Email",
+                table: "Users",
+                column: "Email",
+                unique: true);
         }
 
         /// <inheritdoc />

@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace CalendarAPI.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250104050440_first")]
-    partial class first
+    [Migration("20250120152136_FinalMigration")]
+    partial class FinalMigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -41,6 +41,11 @@ namespace CalendarAPI.Migrations
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<string>("GuestsEmailsJson")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("GuestsEmails");
 
                     b.Property<string>("Location")
                         .IsRequired()
@@ -78,8 +83,11 @@ namespace CalendarAPI.Migrations
                         .HasMaxLength(36)
                         .HasColumnType("character varying(36)");
 
-                    b.Property<TimeSpan>("TimeBefore")
-                        .HasColumnType("interval");
+                    b.Property<double>("MinutesBefore")
+                        .HasColumnType("double precision");
+
+                    b.Property<bool>("SendedEmail")
+                        .HasColumnType("boolean");
 
                     b.HasKey("Id");
 
@@ -107,7 +115,14 @@ namespace CalendarAPI.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("Email")
+                        .IsUnique();
 
                     b.ToTable("Users");
                 });

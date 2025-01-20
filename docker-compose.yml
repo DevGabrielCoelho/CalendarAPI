@@ -1,0 +1,57 @@
+services:
+  postgres:
+    image: postgres:latest
+    environment:
+      - POSTGRES_USER=${POSTGRES_DOCKER_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_DOCKER_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DOCKER_DB}
+    ports:
+      - "${DOCKER_NPGSQL_PORT}"
+    volumes:
+      - postgres_data:/var/opt/postgres/data
+      - postgres_log:/var/opt/postgres/log
+      - postgres_secrets:/var/opt/postgres/secrets
+    networks:
+      - app_network
+    user: "root"
+
+  aspnetcore:
+    build: .
+    ports:
+      - "${DOCKER_ASP_NET_CORE_PORT}"
+    depends_on:
+      - postgres
+    networks:
+      - app_network
+    environment:
+      - ASPNETCORE_URLS=${URLS}
+      - ConnectionStrings__Npgsql=${ConnectionStrings_DOCKER_Npgsql}
+      - Logging__LogLevel__Default=${LOGGING_LOG_LEVEL_DEFAULT}
+      - Logging__LogLevel__Microsoft.AspNetCore=${LOGGING_LOG_LEVEL_MICROSOFT_ASP_NET_CORE}
+      - AllowedHosts=${ALLOWED_HOSTS}
+      - Jwt__Issuer=${JWT_DOCKER_Issuer}
+      - Jwt__Audience=${JWT_DOCKER_Audience}
+      - Jwt__SigninKey=${JWT_DOCKER_SigninKey}
+      - PasswordHasherSettings__SaltSize=${SALT_SIZE}
+      - PasswordHasherSettings__KeySize=${KEY_SIZE}
+      - PasswordHasherSettings__MemorySize=${MEMORY_SIZE}
+      - PasswordHasherSettings__Iterations=${ITERATIONS}
+      - PasswordHasherSettings__DegreeOfParallelism=${DEGREE_OF_PARALLELISM}
+      - PasswordHasherSettings__Delimiter=${DELIMITER}
+      - Email__SmtpServer=${Email_DOCKER_SmtpServer}
+      - Email__SmtpPort=${Email_DOCKER_SmtpPort}
+      - Email__SmtpUser=${Email_DOCKER_SmtpUser}
+      - Email__SmtpPass=${Email_DOCKER_SmtpPass}
+    entrypoint: ["/init-db.sh"]
+    volumes:
+      - aspnetcore_flag_file:/app/flag_file
+
+volumes:
+  postgres_data:
+  postgres_log:
+  postgres_secrets:
+  aspnetcore_flag_file:
+
+networks:
+  app_network:
+    driver: bridge

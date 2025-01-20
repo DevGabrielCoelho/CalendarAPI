@@ -3,7 +3,6 @@ using CalendarAPI.Data;
 using CalendarAPI.Interfaces;
 using CalendarAPI.Repository;
 using CalendarAPI.Services;
-using DotNetEnv;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -11,12 +10,10 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-Env.Load();
-
 builder.Configuration
-    .SetBasePath(Directory.GetCurrentDirectory())  // Define o diretório base
+    .SetBasePath(Directory.GetCurrentDirectory())
     .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-    .AddEnvironmentVariables();  // Carrega as variáveis de ambiente (sobrescrevendo as do appsettings)
+    .AddEnvironmentVariables();
 
 builder.Services.AddRazorPages();
 
