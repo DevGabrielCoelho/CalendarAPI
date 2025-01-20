@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using CalendarAPI.Data;
 using CalendarAPI.Dtos;
 using CalendarAPI.Interfaces;
+using CalendarAPI.Mappers;
 using CalendarAPI.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -25,13 +26,7 @@ namespace CalendarAPI.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateReminders([FromForm] CreateReminderDto dto){
             Event _event = await _eventRepository.GetByIdAsync(dto.EventId);
-            Reminder reminder = new Reminder{
-                CreatorEmail = _event.User.Email,
-                Event = _event,
-                EventId = _event.Id,
-                Id = Guid.NewGuid().ToString(),
-                MinutesBefore = dto.MinutesBefore
-            };
+            Reminder reminder = ReminderMappers.RegisterReminder(dto, _event);
             _event.Reminders.Add(reminder);
             await _reminderRepository.AddAsync(reminder);
             await _eventRepository.UpdateAsync(_event);

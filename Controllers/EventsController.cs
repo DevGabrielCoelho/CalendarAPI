@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using CalendarAPI.Data;
 using CalendarAPI.Dtos;
 using CalendarAPI.Interfaces;
+using CalendarAPI.Mappers;
 using CalendarAPI.Models;
 using CalendarAPI.Repository;
 using Microsoft.AspNetCore.Mvc;
@@ -33,19 +34,7 @@ namespace CalendarAPI.Controllers
             Event _event;
             if (user.Token == token)
             {
-                _event = new Event
-                {
-                    DateStart = dto.DateStart,
-                    DateEnd = dto.DateEnd,
-                    Description = dto.Description,
-                    Id = Guid.NewGuid().ToString(),
-                    Location = dto.Location,
-                    Title = dto.Title,
-                    UserId = user.Id,
-                    User = user,
-                    GuestsEmails = emails
-                    
-                };
+                _event = EventMappers.RegisterEvent(dto, emails, user);
                 user.Events.Add(_event);
                 await _eventRepository.AddEventAsync(_event);
                 await _userRepository.UpdateUserAsync(user);
@@ -69,11 +58,7 @@ namespace CalendarAPI.Controllers
         public async Task<IActionResult> AttEventsById([FromRoute] string id, [FromForm] CreateEventDto dto)
         {
             Event _event = await _eventRepository.GetByIdAsync(id);
-            _event.DateEnd = dto.DateEnd;
-            _event.DateStart = dto.DateStart;
-            _event.Description = dto.Description;
-            _event.Location = dto.Location;
-            _event.Title = dto.Title;
+            _event = EventMappers.EditEvent(dto, _event);
 
             await _eventRepository.UpdateAsync(_event);
 
