@@ -12,17 +12,21 @@ namespace CalendarAPI.Controllers
     {
         private readonly IUserRepository _userRepository;
         private readonly IEventRepository _eventRepository;
+        private readonly IEmailService _emailService;
 
-        public EventsController(IUserRepository userRepository, IEventRepository eventRepository)
+        public EventsController(IUserRepository userRepository, IEventRepository eventRepository, IEmailService emailService)
         {
             _userRepository = userRepository;
             _eventRepository = eventRepository;
+            _emailService = emailService;
         }
 
         [Authorize]
         [HttpPost]
         public async Task<IActionResult> Create([FromForm] CreateEventDto dto, [FromForm] string email, [FromForm] string token, [FromForm] List<string> emails)
         {
+            if (!_emailService.IsValidEmail(email) || !_emailService.IsDomainValid(email))
+                return BadRequest("Invalid email or domain.");
             var user = await _userRepository.GetUserByEmailAsync(email);
             if (string.IsNullOrEmpty(user?.Token)) 
                 return BadRequest("Login error, try logging in again");

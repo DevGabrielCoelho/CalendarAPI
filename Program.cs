@@ -77,8 +77,8 @@ builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IEventRepository, EventRepository>();
 builder.Services.AddScoped<IReminderRepository, ReminderRepository>();
-builder.Services.AddScoped<IEmailService, EmailService>();
-builder.Services.AddScoped<IEmailVerificationService, EmailVerificationService>();
+builder.Services.AddSingleton<IEmailService, EmailService>();
+builder.Services.AddSingleton<IEmailVerificationService, EmailVerificationService>();
 builder.Services.AddHostedService<EmailBackgroundService>();
 
 var app = builder.Build();
