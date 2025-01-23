@@ -1,8 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using CalendarAPI.Data;
+using CalendarAPI.Interfaces;
 using CalendarAPI.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,9 +8,9 @@ namespace CalendarAPI.Services
     public class EmailBackgroundService : BackgroundService
     {
         private readonly IServiceScopeFactory _scopeFactory;
-        private readonly EmailService _emailService;
+        private readonly IEmailService _emailService;
 
-        public EmailBackgroundService(IServiceScopeFactory service, EmailService emailService)
+        public EmailBackgroundService(IServiceScopeFactory service, IEmailService emailService)
         {
             _scopeFactory = service;
             _emailService = emailService;
@@ -27,7 +24,10 @@ namespace CalendarAPI.Services
                 {
                     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
                     var now = DateTime.UtcNow;
-                    if(context.Events == null)throw new Exception();
+
+                    if (context.Events == null)
+                        throw new InvalidOperationException("Events DbSet is null.");
+
                     var eventsToNotify = await context.Events
                         .Include(e => e.Reminders)
                         .Include(e => e.User)
@@ -36,13 +36,10 @@ namespace CalendarAPI.Services
 
                     foreach (var calendarEvent in eventsToNotify)
                     {
-                        var reminder = new Reminder();
-                        foreach(Reminder x in calendarEvent.Reminders.OrderByDescending(x => x.MinutesBefore)){
-                            if(!x.SendedEmail){
-                                reminder = x;
-                                break;
-                            }
-                        }
+                        var reminder = calendarEvent.Reminders
+                            .OrderByDescending(x => x.MinutesBefore)
+                            .FirstOrDefault(x => !x.SendedEmail);
+
                         if (reminder != null && calendarEvent.DateStart - now <= TimeSpan.FromMinutes(reminder.MinutesBefore))
                         {
                             await NotifyUser(calendarEvent);
@@ -58,7 +55,6 @@ namespace CalendarAPI.Services
             }
         }
 
-
         private async Task NotifyUser(Event calendarEvent)
         {
             var emailBody = $@"
@@ -68,13 +64,15 @@ namespace CalendarAPI.Services
                     <li><strong>Description:</strong> {calendarEvent.Description}</li>
                     <li><strong>Date:</strong> {calendarEvent.DateStart:MM/dd/yyyy HH:mm}</li>
                     <li><strong>Location:</strong> {calendarEvent.Location}</li>
-                </ul>git 
+                </ul>
             ";
+
             await _emailService.SendEmailAsync(calendarEvent.User.Email, "Event Reminder", emailBody);
-            foreach(string x in calendarEvent.GuestsEmails){
-                await _emailService.SendEmailAsync(x, "Event Reminder", emailBody);
+
+            foreach (var guestEmail in calendarEvent.GuestsEmails)
+            {
+                await _emailService.SendEmailAsync(guestEmail, "Event Reminder", emailBody);
             }
         }
-
     }
 }

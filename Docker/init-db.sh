@@ -14,17 +14,17 @@ fi
 
 FLAG_FILE="/app/flag_file/migrations_done.flag"
 
-echo "Aguardando PostgreSQL iniciar..."
+echo "Waiting for PostgreSQL to start..."
 
 until pg_isready -h postgres -p 5432 -U "$POSTGRES_DOCKER_USER" > /dev/null 2>&1; do
-    echo "Aguardando PostgreSQL... Tentando novamente em 5 segundos."
+    echo "Waiting for PostgreSQL... Retrying in 5 seconds."
     sleep 5
 done
 
-echo "PostgreSQL iniciado."
+echo "PostgreSQL started."
 
 if [ ! -f "$FLAG_FILE" ]; then
-    echo "Executando as migrações..."
+    echo "Running migrations..."
     sleep 5
     cd /src
 
@@ -32,14 +32,14 @@ if [ ! -f "$FLAG_FILE" ]; then
 
     touch "$FLAG_FILE"
     
-    echo "Migrações realizadas em $(date)" >> "$FLAG_FILE"
+    echo "Migrations completed at $(date)" >> "$FLAG_FILE"
 
-    echo "Migrações concluídas!"
+    echo "Migrations completed!"
 else
-    echo "As migrações já foram realizadas anteriormente."
-    echo "Tentativa de migração em $(date) (já realizado)" >> "$FLAG_FILE"
+    echo "Migrations have already been performed."
+    echo "Migration attempt at $(date) (already done)" >> "$FLAG_FILE"
 fi
 
-echo "Iniciando o aplicativo .NET..."
+echo "Starting the .NET application..."
 
 dotnet /app/publish/CalendarAPI.dll

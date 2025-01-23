@@ -1,9 +1,5 @@
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace CalendarAPI.Models
 {
@@ -13,14 +9,19 @@ namespace CalendarAPI.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         [Required]
         public string Id { get; set; } = string.Empty;
+
         [Required]
         public string EventId { get; set; } = string.Empty;
+
         [NotMapped]
         public Event Event { get; set; } = new();
+
         [Required]
-        public Double MinutesBefore { get; set; }
+        public double MinutesBefore { get; set; }
+
         [Required]
         public bool SendedEmail { get; set; } = false;
+
         [Required]
         public string CreatorEmail { get; set; } = string.Empty;
     }

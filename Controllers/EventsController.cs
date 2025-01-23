@@ -1,15 +1,8 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using CalendarAPI.Data;
 using CalendarAPI.Dtos;
 using CalendarAPI.Interfaces;
 using CalendarAPI.Mappers;
-using CalendarAPI.Models;
-using CalendarAPI.Repository;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace CalendarAPI.Controllers
 {
@@ -26,52 +19,72 @@ namespace CalendarAPI.Controllers
             _eventRepository = eventRepository;
         }
 
+        [Authorize]
         [HttpPost]
         public async Task<IActionResult> Create([FromForm] CreateEventDto dto, [FromForm] string email, [FromForm] string token, [FromForm] List<string> emails)
         {
-            System.Console.WriteLine(dto.Title);
-            User user = await _userRepository.GetUserByEmailAsync(email);
-            Event _event;
-            if (user.Token == token)
-            {
-                _event = EventMappers.RegisterEvent(dto, emails, user);
-                user.Events.Add(_event);
-                await _eventRepository.AddEventAsync(_event);
-                await _userRepository.UpdateUserAsync(user);
-            }
-            return Ok();
+            var user = await _userRepository.GetUserByEmailAsync(email);
+            if (string.IsNullOrEmpty(user?.Token)) 
+                return BadRequest("Login error, try logging in again");
+            
+            if (!user.Validated) 
+                return BadRequest("Your email is not validated");
+
+            if (user.Token != token)
+                return BadRequest("Invalid token");
+
+            var newEvent = EventMappers.RegisterEvent(dto, emails, user);
+            user.Events.Add(newEvent);
+
+            await _eventRepository.AddEventAsync(newEvent);
+            await _userRepository.UpdateUserAsync(user);
+            
+            return Ok("Event created successfully");
         }
 
+        [Authorize]
         [HttpGet]
         public async Task<IActionResult> ListEvents()
         {
-            return Ok(await _eventRepository.GetAllAsync());
+            var events = await _eventRepository.GetAllAsync();
+            return Ok(events);
         }
 
+        [Authorize]
         [HttpGet("{id}")]
-        public async Task<IActionResult> ListEventsById([FromRoute] string id)
+        public async Task<IActionResult> GetEventById([FromRoute] string id)
         {
-            return Ok(await _eventRepository.GetByIdAsync(id));
+            var eventItem = await _eventRepository.GetByIdAsync(id);
+            if (eventItem == null)
+                return NotFound("Event not found");
+            
+            return Ok(eventItem);
         }
 
+        [Authorize]
         [HttpPut("{id}")]
-        public async Task<IActionResult> AttEventsById([FromRoute] string id, [FromForm] CreateEventDto dto)
+        public async Task<IActionResult> UpdateEvent([FromRoute] string id, [FromForm] CreateEventDto dto)
         {
-            Event _event = await _eventRepository.GetByIdAsync(id);
-            _event = EventMappers.EditEvent(dto, _event);
-
-            await _eventRepository.UpdateAsync(_event);
-
-            return Ok();
+            var existingEvent = await _eventRepository.GetByIdAsync(id);
+            if (existingEvent == null)
+                return NotFound("Event not found");
+            
+            existingEvent = EventMappers.EditEvent(dto, existingEvent);
+            await _eventRepository.UpdateAsync(existingEvent);
+            
+            return Ok("Event updated successfully");
         }
 
+        [Authorize]
         [HttpDelete("{id}")]
-        public IActionResult DelEventById([FromRoute] string id)
+        public async Task<IActionResult> DeleteEvent([FromRoute] string id)
         {
-            _eventRepository.RemoveByIdAsync(id);
-            return Ok();
+            var eventToDelete = await _eventRepository.GetByIdAsync(id);
+            if (eventToDelete == null)
+                return NotFound("Event not found");
+
+            await _eventRepository.RemoveByIdAsync(id);
+            return Ok("Event deleted successfully");
         }
-
-
     }
 }

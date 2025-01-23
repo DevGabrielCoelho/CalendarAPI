@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using CalendarAPI.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,8 +5,7 @@ namespace CalendarAPI.Data
 {
     public class AppDbContext : DbContext
     {
-        public AppDbContext(DbContextOptions dbContextOptions) :
-            base(dbContextOptions)
+        public AppDbContext(DbContextOptions dbContextOptions) : base(dbContextOptions)
         { }
 
         public DbSet<User>? Users { get; set; }
@@ -20,16 +15,16 @@ namespace CalendarAPI.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<User>()
-            .HasMany<Event>(u => u.Events)
-            .WithOne(e => e.User)
-            .HasForeignKey(e => e.UserId)
-            .OnDelete(DeleteBehavior.Restrict);
+                .HasMany(u => u.Events)
+                .WithOne(e => e.User)
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Event>()
-            .HasMany<Reminder>(e => e.Reminders)
-            .WithOne(r => r.Event)
-            .HasForeignKey(r => r.EventId)
-            .OnDelete(DeleteBehavior.Restrict);
+                .HasMany(e => e.Reminders)
+                .WithOne(r => r.Event)
+                .HasForeignKey(r => r.EventId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<User>()
                 .Property(u => u.Id)
@@ -63,9 +58,9 @@ namespace CalendarAPI.Data
                 .Property(r => r.EventId)
                 .HasMaxLength(36)
                 .IsRequired();
-            
+
             modelBuilder.Entity<Reminder>()
-                .Property(e => e.SendedEmail)
+                .Property(r => r.SendedEmail)
                 .IsRequired();
 
             base.OnModelCreating(modelBuilder);

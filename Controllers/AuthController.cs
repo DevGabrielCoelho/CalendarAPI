@@ -1,16 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using CalendarAPI.Data;
 using CalendarAPI.Dtos;
 using CalendarAPI.Interfaces;
 using CalendarAPI.Mappers;
-using CalendarAPI.Models;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace CalendarAPI.Controllers
 {
@@ -20,37 +11,73 @@ namespace CalendarAPI.Controllers
     {
         private readonly IUserRepository _userRepository;
         private readonly IPasswordHasher _hasher;
-        private readonly ITokenService _token;
-        public AuthController(IPasswordHasher hasher, ITokenService token, IUserRepository userRepository){
+        private readonly ITokenService _tokenService;
+        private readonly IEmailVerificationService _emailVerificationService;
+        private readonly IEmailService _emailService;
+
+        public AuthController(
+            IPasswordHasher hasher,
+            ITokenService tokenService,
+            IUserRepository userRepository,
+            IEmailVerificationService emailVerificationService,
+            IEmailService emailService)
+        {
             _hasher = hasher;
-            _token = token;
+            _tokenService = tokenService;
             _userRepository = userRepository;
+            _emailVerificationService = emailVerificationService;
+            _emailService = emailService;
         }
 
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromForm]UserDto userDto){
+        public async Task<IActionResult> Register([FromForm] UserDto userDto)
+        {
+            if (await _userRepository.GetUserByEmailAsync(userDto.Email) != null)
+                return BadRequest("Email already registered.");
+            
             userDto.Pass = _hasher.Hash(userDto.Pass);
-            User user = UserMappers.RegisterUser(userDto);
+            var user = UserMappers.RegisterUser(userDto);
             await _userRepository.AddUserAsync(user);
-            return Ok();
+            await SendValidationCode(userDto.Email);
+            return Ok("User registered successfully.");
+        }
+
+        [HttpPost("send-code")]
+        public async Task<IActionResult> SendValidationCode([FromQuery] string email)
+        {
+            if (await _userRepository.GetUserByEmailAsync(email) == null)
+                return NotFound("User not found.");
+
+            var code = _emailVerificationService.GenerateCode(email);
+            await _emailService.SendEmailAsync(email, "Code Validator", $"Your verification code is: {code}");
+            return Ok("Verification code sent.");
+        }
+
+        [HttpPost("validate-code")]
+        public async Task<IActionResult> ValidateCode([FromQuery] string email, [FromQuery] string code)
+        {
+            var user = await _userRepository.GetUserByEmailAsync(email);
+            if (user == null)
+                return NotFound("User not found.");
+            
+            if (!_emailVerificationService.ValidateVerificationCode(email, code))
+                return BadRequest("Invalid verification code.");
+            
+            user.Validated = true;
+            await _userRepository.UpdateUserAsync(user);
+            return Ok("Code validated successfully.");
         }
 
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromForm]LoginDto dto){
-            User user = await _userRepository.GetUserByEmailAsync(dto.Email);
-            bool Verify = _hasher.Verify(user.PassHash, dto.Pass);
-            if(Verify){
-                user.Token = _token.CreateToken(user);
-                await _userRepository.UpdateTokenAsync(user.Id, user.Token);
-                return Ok();
-            }
-            return BadRequest();
-        }
-
-        [Authorize]
-        [HttpGet("test")]
-        public IActionResult Test(){
-            return Ok();
+        public async Task<IActionResult> Login([FromForm] LoginDto dto)
+        {
+            var user = await _userRepository.GetUserByEmailAsync(dto.Email);
+            if (user == null || !_hasher.Verify(user.PassHash, dto.Pass))
+                return BadRequest("Invalid email or password.");
+            
+            user.Token = _tokenService.CreateToken(user);
+            await _userRepository.UpdateTokenAsync(user.Id, user.Token);
+            return Ok(new { Token = user.Token });
         }
     }
 }
