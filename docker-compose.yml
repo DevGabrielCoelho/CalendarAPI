@@ -24,33 +24,38 @@ services:
     networks:
       - app_network
     environment:
-      - ASPNETCORE_URLS=${URLS}
+      - Logging__LogLevel__Default=${Logging_DOCKER_LogLevel__Default}
+      - Logging__LogLevel__Microsoft.AspNetCore=${Logging_DOCKER_LogLevel__MicrosoftAspNetCore}
+      - Serilog__MinimumLevel=${Serilog_DOCKER_MinimumLevel}
+      - Serilog__WriteTo__1__Args__rollingInterval=${Serilog_DOCKER_WriteTo__1__Args__rollingInterval}
+      - AllowedHosts=${AllowedHostsDOCKER}
       - ConnectionStrings__Npgsql=${ConnectionStrings_DOCKER_Npgsql}
-      - Logging__LogLevel__Default=${LOGGING_LOG_LEVEL_DEFAULT}
-      - Logging__LogLevel__Microsoft.AspNetCore=${LOGGING_LOG_LEVEL_MICROSOFT_ASP_NET_CORE}
-      - AllowedHosts=${ALLOWED_HOSTS}
       - Jwt__Issuer=${JWT_DOCKER_Issuer}
       - Jwt__Audience=${JWT_DOCKER_Audience}
       - Jwt__SigninKey=${JWT_DOCKER_SigninKey}
-      - PasswordHasherSettings__SaltSize=${SALT_SIZE}
-      - PasswordHasherSettings__KeySize=${KEY_SIZE}
-      - PasswordHasherSettings__MemorySize=${MEMORY_SIZE}
-      - PasswordHasherSettings__Iterations=${ITERATIONS}
-      - PasswordHasherSettings__DegreeOfParallelism=${DEGREE_OF_PARALLELISM}
-      - PasswordHasherSettings__Delimiter=${DELIMITER}
       - Email__SmtpServer=${Email_DOCKER_SmtpServer}
       - Email__SmtpPort=${Email_DOCKER_SmtpPort}
       - Email__SmtpUser=${Email_DOCKER_SmtpUser}
       - Email__SmtpPass=${Email_DOCKER_SmtpPass}
+      - PasswordHasherSettings__SaltSize=${PasswordHasherSettings_DOCKER_SaltSize}
+      - PasswordHasherSettings__KeySize=${PasswordHasherSettings_DOCKER_KeySize}
+      - PasswordHasherSettings__MemorySize=${PasswordHasherSettings_DOCKER_MemorySize}
+      - PasswordHasherSettings__Iterations=${PasswordHasherSettings_DOCKER_Iterations}
+      - PasswordHasherSettings__DegreeOfParallelism=${PasswordHasherSettings_DOCKER_DegreeOfParallelism}
+      - PasswordHasherSettings__Delimiter=${PasswordHasherSettings_DOCKER_Delimiter}
+      - ASPNETCORE_URLS=${URLS}
     entrypoint: ["/init-db.sh"]
     volumes:
       - aspnetcore_flag_file:/app/flag_file
+      - aspnetcore_logs:/src/logs
+    restart: always
 
 volumes:
   postgres_data:
   postgres_log:
   postgres_secrets:
   aspnetcore_flag_file:
+  aspnetcore_logs:
 
 networks:
   app_network:
